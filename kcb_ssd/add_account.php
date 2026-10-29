@@ -1,0 +1,11 @@
+<?php
+require_once 'functions.php'; require_role(['admin','employee']);
+$customers=$pdo->query("SELECT id,full_name,email FROM users WHERE role='customer' AND status='active' ORDER BY full_name")->fetchAll();$error='';
+if($_SERVER['REQUEST_METHOD']==='POST'){verify_csrf();$uid=(int)($_POST['user_id']??0);$initial=(float)($_POST['initial_deposit']??0);
+ if($initial<0||$initial>100000000)$error='Initial deposit must be a non-negative valid amount.';
+ else{try{$pdo->beginTransaction();$s=$pdo->prepare("SELECT id FROM users WHERE id=? AND role='customer' AND status='active'");$s->execute([$uid]);if(!$s->fetch())throw new RuntimeException();$s=$pdo->prepare("INSERT INTO accounts(user_id,account_number,balance) VALUES(?,?,?)");$number='KCB'.date('ymd').strtoupper(bin2hex(random_bytes(3)));$s->execute([$uid,$number,$initial]);$aid=(int)$pdo->lastInsertId();if($initial>0)post_transaction($pdo,$aid,'deposit',$initial,'Initial account deposit');$pdo->commit();flash('Bank account opened successfully.');header('Location: accounts.php');exit;}catch(Throwable $e){if($pdo->inTransaction())$pdo->rollBack();$error='Could not open account. Please check the selected customer and try again.';}}
+}
+header_view('Open bank account');
+?>
+<section class="panel form-panel"><div class="panel-heading"><div><h3>Open a new account</h3><p class="muted">Select an existing customer and optionally record an opening deposit.</p></div></div><?php if($error):?><div class="alert error"><?=e($error)?></div><?php endif;?><form method="post" class="form-grid"><input type="hidden" name="csrf_token" value="<?=e(csrf_token())?>"><div class="span-2"><label>Customer</label><select name="user_id" required><option value="">Choose a customer</option><?php foreach($customers as $c):?><option value="<?=(int)$c['id']?>"><?=e($c['full_name'].' — '.$c['email'])?></option><?php endforeach;?></select></div><div class="span-2"><label>Initial deposit (SSP)</label><input type="number" name="initial_deposit" min="0" step="0.01" value="0" required></div><div class="span-2 form-actions"><button class="btn primary">Open account</button><a class="btn secondary" href="accounts.php">Cancel</a></div></form></section>
+<?php footer_view(); ?>

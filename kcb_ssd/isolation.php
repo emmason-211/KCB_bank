@@ -1,0 +1,6 @@
+<?php
+require_once 'functions.php'; require_role(['admin']);
+header_view('Transaction isolation');
+?>
+<section class="panel"><h3>MySQL transaction isolation</h3><p class="muted">Isolation controls how concurrent database transactions can see one another's changes. This page explains the setting used for a demonstration, rather than changing a live bank database.</p><div class="table-wrap"><table><thead><tr><th>Level</th><th>What it means</th><th>Typical trade-off</th></tr></thead><tbody><tr><td><b>READ UNCOMMITTED</b></td><td>May read uncommitted changes.</td><td>Highest risk of dirty reads.</td></tr><tr><td><b>READ COMMITTED</b></td><td>Reads only committed data.</td><td>Repeated reads may differ.</td></tr><tr><td><b>REPEATABLE READ</b></td><td>Consistent repeated reads within a transaction; MySQL InnoDB default.</td><td>May use more locking or MVCC resources.</td></tr><tr><td><b>SERIALIZABLE</b></td><td>Strongest isolation; transactions behave as if serialized.</td><td>Can reduce concurrency.</td></tr></tbody></table></div><div class="notice">Banking operations in this demo use InnoDB transactions, row locks (FOR UPDATE), prepared statements, and commit/rollback to prevent partial transfers and overdrafts. A real banking system needs additional controls and professional security review.</div></section>
+<?php footer_view(); ?>
